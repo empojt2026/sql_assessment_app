@@ -1087,17 +1087,15 @@ with st.expander(" Question Details & Schema"):
                         pairs = [p.strip() for p in sample_text.split(',')]
                         table_data_rows = []
                         for pair in pairs:
-                            # ...existing code...
-                            pass
-    else:
-        st.markdown("**Tables Involved:** _(Not applicable for this question)_")
-                        if ':' in pair:
-                            key, value = pair.split(':', 1)
-                            table_data_rows.append({"Column": key.strip(), "Value": value.strip()})
-                    if table_data_rows:
-                        st.dataframe(table_data_rows, width='stretch', hide_index=True)
-                    else:
-                        st.write(f"  {sample_text}")
+                            if ':' in pair:
+                                key, value = pair.split(':', 1)
+                                table_data_rows.append({"Column": key.strip(), "Value": value.strip()})
+                        if table_data_rows:
+                            st.dataframe(table_data_rows, width='stretch', hide_index=True)
+                        else:
+                            st.write(f"  {sample_text}")
+                else:
+                    st.markdown("**Tables Involved:** _(Not applicable for this question)_")
                 else:
                     st.write(f"  {sample_text}")
             if 'relationship' in table_data:
