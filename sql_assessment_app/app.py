@@ -1067,42 +1067,43 @@ st.subheader(f"Question {st.session_state.current_q + 1} of {len(st.session_stat
 q = st.session_state.shuffled_questions[st.session_state.current_q]
 st.markdown(f"**Question:** {q['question']}")
 
-# Display description and table information (if available)
-with st.expander(" Question Details & Schema"):
-    if 'description' in q:
-        st.markdown(f"**Description:** {q['description']}")
-    else:
-        st.markdown("**Description:** _(No description available for this question)_")
-    if 'table_info' in q:
-        st.markdown("**Tables Involved:**")
-        for table_name, table_data in q['table_info'].items():
-            st.markdown(f"- **{table_name}**")
-            if isinstance(table_data, dict):
-                if 'columns' in table_data:
-                    st.write(f"  Columns: {', '.join(table_data['columns'])}")
-                if 'sample' in table_data:
-                    st.markdown("  **Sample Data:**")
-                    parsed = parse_sample_text(table_data['sample'])
-                    if parsed['type'] == 'io':
-                        col1, col2 = st.columns(2)
-                        with col1:
-                            st.markdown("**Input:**")
-                            st.code(parsed['input'])
-                        with col2:
-                            st.markdown("**Output:**")
-                            st.code(parsed['output'])
-                    elif parsed['type'] == 'kv':
-                        st.dataframe(parsed['rows'], width='stretch', hide_index=True)
+# Display description and table information (if available) — hidden for MCQ questions
+if q.get("type") != "mcq":
+    with st.expander(" Question Details & Schema"):
+        if 'description' in q:
+            st.markdown(f"**Description:** {q['description']}")
+        else:
+            st.markdown("**Description:** _(No description available for this question)_")
+        if 'table_info' in q:
+            st.markdown("**Tables Involved:**")
+            for table_name, table_data in q['table_info'].items():
+                st.markdown(f"- **{table_name}**")
+                if isinstance(table_data, dict):
+                    if 'columns' in table_data:
+                        st.write(f"  Columns: {', '.join(table_data['columns'])}")
+                    if 'sample' in table_data:
+                        st.markdown("  **Sample Data:**")
+                        parsed = parse_sample_text(table_data['sample'])
+                        if parsed['type'] == 'io':
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.markdown("**Input:**")
+                                st.code(parsed['input'])
+                            with col2:
+                                st.markdown("**Output:**")
+                                st.code(parsed['output'])
+                        elif parsed['type'] == 'kv':
+                            st.dataframe(parsed['rows'], width='stretch', hide_index=True)
+                        else:
+                            st.write(f"  {parsed['text']}")
                     else:
-                        st.write(f"  {parsed['text']}")
-                else:
-                    st.markdown("**Tables Involved:** _(Not applicable for this question)_")
-            if 'relationship' in table_data:
-                st.write(f"  Relationship: {table_data['relationship']}")
+                        st.markdown("**Tables Involved:** _(Not applicable for this question)_")
+                if 'relationship' in table_data:
+                    st.write(f"  Relationship: {table_data['relationship']}")
     
-    # Show relationship info if available
-    if 'relationship' in q.get('table_info', {}):
-        st.markdown(f"**Relationship:** {q['table_info']['relationship']}")
+        # Show relationship info if available
+        if 'relationship' in q.get('table_info', {}):
+            st.markdown(f"**Relationship:** {q['table_info']['relationship']}")
 
 # Determine question type and display accordingly
 if q.get("type") == "mcq":
@@ -1113,23 +1114,34 @@ if q.get("type") == "mcq":
     selected_options = []
     is_multiselect = len(q["correct_answers"]) > 1
     
+    # Prepare lock/view flags for this question
+    lock_key = f"locked_{q['id']}"
+    view_key = f"viewed_solution_{q['id']}"
+    if lock_key not in st.session_state:
+        st.session_state[lock_key] = False
+    if view_key not in st.session_state:
+        st.session_state[view_key] = False
+
     if is_multiselect:
         st.info("⚠️ Select all that apply")
         for option in q["options"]:
-            if st.checkbox(option, key=f"option_{st.session_state.current_q}_{option}"):
+            if st.checkbox(option, key=f"option_{st.session_state.current_q}_{option}", disabled=st.session_state[lock_key]):
                 # Extract letter (A, B, C, D)
                 letter = option.split(".")[0].strip()
                 selected_options.append(letter)
     else:
-        selected_option = st.radio("Select the correct answer:", q["options"], key=f"option_{st.session_state.current_q}")
-        if selected_option:
+        # Use a placeholder first option so no real answer is pre-selected
+        placeholder = "Choose..."
+        options_with_placeholder = [placeholder] + q["options"]
+        selected_option = st.radio("Select the correct answer:", options_with_placeholder, index=0, key=f"option_{st.session_state.current_q}")
+        if selected_option and selected_option != placeholder:
             letter = selected_option.split(".")[0].strip()
             selected_options = [letter]
     
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("Submit Answer", type="primary", key=f"submit_mcq_{st.session_state.current_q}"):
+        if st.button("Submit Answer", type="primary", key=f"submit_mcq_{st.session_state.current_q}", disabled=st.session_state[lock_key]):
             if not selected_options:
                 st.warning("Please select an answer before submitting.")
             else:
@@ -1179,23 +1191,31 @@ if q.get("type") == "mcq":
             st.success(st.session_state.feedback_message)
         else:
             st.error(st.session_state.feedback_message)
-            with st.expander("View correct answer"):
+            # Let the user explicitly view the correct answer — once viewed the question is locked
+            if not st.session_state[view_key]:
+                if st.button("View correct answer", key=f"view_mcq_{st.session_state.current_q}"):
+                    st.session_state[view_key] = True
+                    st.session_state[lock_key] = True
+
+            if st.session_state[view_key]:
                 st.markdown(f"**Correct Answer(s):** {', '.join(q['correct_answers'])}")
                 st.markdown("**Your Answer(s):** " + st.session_state.answers[-1]['your_answer'])
-                if st.button("Edit Answer", key=f"edit_mcq_{st.session_state.current_q}"):
-                    # Remove stored answer for this question and reset option states
-                    for i in range(len(st.session_state.answers) - 1, -1, -1):
-                        if st.session_state.answers[i]["question_id"] == q["id"]:
-                            st.session_state.answers.pop(i)
-                            break
-                    # Reset option widgets for this question
-                    for option in q["options"]:
-                        key = f"option_{st.session_state.current_q}_{option}"
-                        if key in st.session_state:
-                            st.session_state[key] = False
-                    st.session_state.show_feedback = False
-                    st.session_state.feedback_message = ""
-                    st.rerun()
+                # Edit allowed only if not locked (locked becomes True when user views the solution)
+                if not st.session_state[lock_key]:
+                    if st.button("Edit Answer", key=f"edit_mcq_{st.session_state.current_q}"):
+                        # Remove stored answer for this question and reset option states
+                        for i in range(len(st.session_state.answers) - 1, -1, -1):
+                            if st.session_state.answers[i]["question_id"] == q["id"]:
+                                st.session_state.answers.pop(i)
+                                break
+                        # Reset option widgets for this question
+                        for option in q["options"]:
+                            key = f"option_{st.session_state.current_q}_{option}"
+                            if key in st.session_state:
+                                st.session_state[key] = False
+                        st.session_state.show_feedback = False
+                        st.session_state.feedback_message = ""
+                        st.rerun()
 else:
     # SQL Question
     user_sql = st.text_area(
@@ -1207,8 +1227,16 @@ else:
     
     col1, col2 = st.columns([1, 1])
     
+    # Prepare lock/view flags for this question
+    lock_key = f"locked_{q['id']}"
+    view_key = f"viewed_solution_{q['id']}"
+    if lock_key not in st.session_state:
+        st.session_state[lock_key] = False
+    if view_key not in st.session_state:
+        st.session_state[view_key] = False
+
     with col1:
-        if st.button("Submit Answer", type="primary", key=f"submit_sql_{st.session_state.current_q}"):
+        if st.button("Submit Answer", type="primary", key=f"submit_sql_{st.session_state.current_q}", disabled=st.session_state[lock_key]):
             if not user_sql.strip():
                 st.warning("Please enter an answer before submitting.")
             else:
@@ -1261,20 +1289,28 @@ else:
             st.success(st.session_state.feedback_message)
         else:
             st.error(st.session_state.feedback_message)
-            with st.expander("View solution"):
+            # Let the user explicitly view the solution — once viewed the question is locked
+            if not st.session_state[view_key]:
+                if st.button("View solution", key=f"view_sql_{st.session_state.current_q}"):
+                    st.session_state[view_key] = True
+                    st.session_state[lock_key] = True
+
+            if st.session_state[view_key]:
                 st.code(q["solution"], language="sql")
                 st.markdown("**Explanation:**")
                 st.write(f"Your answer: `{st.session_state.answers[-1]['your_answer']}`")
-                if st.button("Edit Answer", key=f"edit_sql_{st.session_state.current_q}"):
-                    # Restore last submitted SQL for re-editing and remove stored submission
-                    for i in range(len(st.session_state.answers) - 1, -1, -1):
-                        if st.session_state.answers[i]["question_id"] == q["id"]:
-                            st.session_state.user_sql_input = st.session_state.answers[i]["your_answer"]
-                            st.session_state.answers.pop(i)
-                            break
-                    st.session_state.show_feedback = False
-                    st.session_state.feedback_message = ""
-                    st.rerun()
+                # Edit allowed only if not locked
+                if not st.session_state[lock_key]:
+                    if st.button("Edit Answer", key=f"edit_sql_{st.session_state.current_q}"):
+                        # Restore last submitted SQL for re-editing and remove stored submission
+                        for i in range(len(st.session_state.answers) - 1, -1, -1):
+                            if st.session_state.answers[i]["question_id"] == q["id"]:
+                                st.session_state.user_sql_input = st.session_state.answers[i]["your_answer"]
+                                st.session_state.answers.pop(i)
+                                break
+                        st.session_state.show_feedback = False
+                        st.session_state.feedback_message = ""
+                        st.rerun()
 
 # Show results when all questions are completed
 if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or 
