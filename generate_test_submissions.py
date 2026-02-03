@@ -50,6 +50,8 @@ def generate_submission(user_name, user_email, correctness_rate):
                 correct_answer = "A"
         
         questions.append({
+            "Name": user_name,
+            "Email": user_email,
             "question_id": q_id,
             "question": question_text,
             "your_answer": your_answer,
@@ -58,7 +60,29 @@ def generate_submission(user_name, user_email, correctness_rate):
             "type": question_type
         })
     
-    return pd.DataFrame(questions)
+    df = pd.DataFrame(questions)
+    # Add summary columns
+    correct_count = df["is_correct"].sum()
+    total_count = len(df)
+    score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
+    
+    # Prepend summary row (for reference)
+    summary = {
+        "Name": user_name,
+        "Email": user_email,
+        "question_id": "SUMMARY",
+        "question": "",
+        "your_answer": "",
+        "correct_answer": "",
+        "is_correct": "",
+        "type": "",
+        "Correct Answers": correct_count,
+        "Total Questions": total_count,
+        "Score (%)": f"{score_pct:.1f}",
+        "Submitted At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }
+    
+    return df
 
 def main():
     submissions_dir = "/workspaces/sql_assessment_app/sql_assessment_app/submissions"
@@ -71,7 +95,10 @@ def main():
         
         df = generate_submission(user_name, user_email, correctness_rate)
         df.to_csv(filepath, index=False)
-        print(f"✓ Created {filename} ({int(correctness_rate*100)}% correct)")
+        correct_count = df["is_correct"].sum()
+        total_count = len(df)
+        score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
+        print(f"✓ Created {filename} ({score_pct:.1f}% correct, {correct_count}/{total_count} questions))")
 
 if __name__ == "__main__":
     main()

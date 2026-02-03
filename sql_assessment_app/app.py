@@ -921,48 +921,51 @@ if st.session_state.admin_authenticated:
     if not os.path.exists("submissions"):
         os.makedirs("submissions")
     
-    # Read all submission files (full and partial)
+    # Read all submission files
     submission_files = [f for f in os.listdir("submissions") if f.endswith('.csv')]
     
     if submission_files:
         st.info(f"✅ Total employee submissions: {len(submission_files)}")
         
-        # Load all submissions and pad missing Qx_Answer columns
-        all_submissions = []
-        num_questions = 34
-        answer_cols = [f"Q{i}_Answer" for i in range(1, num_questions+1)]
+        # Load and aggregate all submissions
+        all_details = []
+        summary_rows = []
+        
         for file in submission_files:
             try:
                 df = pd.read_csv(f"submissions/{file}")
-                # Mark partial submissions
-                df['SubmissionType'] = 'Partial' if 'partial' in file else 'Full'
-                # Pad missing Qx_Answer columns with empty or default values
-                for col in answer_cols:
-                    if col not in df.columns:
-                        df[col] = ''
-                # Ensure columns are in the correct order
-                base_cols = [c for c in df.columns if not c.startswith('Q')]
-                df = df[base_cols + answer_cols]
-                all_submissions.append(df)
+                
+                # Extract metadata
+                if len(df) > 0:
+                    name = df.iloc[0].get('Name', 'Unknown')
+                    email = df.iloc[0].get('Email', 'Unknown')
+                    
+                    # Count correct answers
+                    correct_count = df['is_correct'].sum() if 'is_correct' in df.columns else 0
+                    total_count = len(df)
+                    score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
+                    
+                    # Create summary for this user
+                    summary_rows.append({
+                        "Name": name,
+                        "Email": email,
+                        "Correct Answers": int(correct_count),
+                        "Total Questions": total_count,
+                        "Score (%)": f"{score_pct:.1f}",
+                        "Submitted At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    })
+                    
+                    # Add detailed rows for later viewing
+                    all_details.append((name, email, df))
             except Exception as e:
                 st.warning(f"Error reading {file}: {e}")
         
-        if all_submissions:
-            # Keep a copy of the original (string) DataFrame for export
-            all_submissions_export = [df.copy() for df in all_submissions]
-            # Normalize Qx_Answer columns to boolean (True/False) and replace None with False for display only
-            for df in all_submissions:
-                for col in answer_cols:
-                    if col in df.columns:
-                        df[col] = df[col].map(lambda x: True if str(x).strip().lower() == 'true' else (False if str(x).strip().lower() == 'false' else False))
-            # Combine all submissions for display
-            combined_df = pd.concat(all_submissions, ignore_index=True)
-            # Combine all submissions for export (original values)
-            combined_df_export = pd.concat(all_submissions_export, ignore_index=True)
+        if summary_rows:
+            summary_df = pd.DataFrame(summary_rows)
             
-            # Display submissions table
-            st.subheader("All Employee Submissions (Full and Partial)")
-            st.dataframe(combined_df, use_container_width=True, hide_index=True)
+            # Display summary table
+            st.subheader("Employee Assessment Summary")
+            st.dataframe(summary_df, use_container_width=True, hide_index=True)
             
             # Export options
             st.subheader(" Export Options")
@@ -970,11 +973,11 @@ if st.session_state.admin_authenticated:
             
             with col1:
                 # Export as CSV
-                csv_data = combined_df_export.to_csv(index=False)
+                csv_data = summary_df.to_csv(index=False)
                 st.download_button(
-                    label=" Download as CSV",
+                    label=" Download Summary as CSV",
                     data=csv_data,
-                    file_name=f"sql_assessment_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    file_name=f"sql_assessment_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="text/csv"
                 )
             
@@ -984,51 +987,57 @@ if st.session_state.admin_authenticated:
                     import openpyxl
                     excel_buffer = io.BytesIO()
                     with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                        combined_df.to_excel(writer, index=False, sheet_name='Submissions')
+                        summary_df.to_excel(writer, index=False, sheet_name='Summary')
                     excel_buffer.seek(0)
                     st.download_button(
-                        label=" Download as Excel",
+                        label=" Download Summary as Excel",
                         data=excel_buffer.getvalue(),
-                        file_name=f"sql_assessment_results_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                        file_name=f"sql_assessment_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
                 except ImportError:
                     st.info("Install openpyxl: pip install openpyxl")
             
             with col3:
-                st.metric("Total Users", len(combined_df))
+                st.metric("Total Users", len(summary_df))
             
             # Summary statistics
             st.subheader(" Summary Statistics")
             stats_col1, stats_col2, stats_col3, stats_col4 = st.columns(4)
             
             with stats_col1:
-                st.metric("Total Submissions", len(combined_df))
+                st.metric("Total Submissions", len(summary_df))
             
             with stats_col2:
-                if 'Correct Answers' in combined_df.columns:
-                    avg_correct = combined_df['Correct Answers'].mean()
-                    st.metric("Avg Correct Answers", f"{avg_correct:.1f}")
+                avg_correct = pd.to_numeric(summary_df['Correct Answers']).mean()
+                st.metric("Avg Correct Answers", f"{avg_correct:.1f}")
             
             with stats_col3:
-                if 'Score (%)' in combined_df.columns:
-                    avg_score = combined_df['Score (%)'].mean()
-                    st.metric("Avg Score", f"{avg_score:.1f}%")
+                avg_score = pd.to_numeric(summary_df['Score (%)'].astype(str)).mean()
+                st.metric("Avg Score", f"{avg_score:.1f}%")
             
             with stats_col4:
-                st.metric("Unique Users", combined_df['Name'].nunique() if 'Name' in combined_df.columns else 'N/A')
+                st.metric("Unique Users", len(summary_df))
             
             # Detailed view option
-            with st.expander(" View Detailed Submissions"):
-                for idx, row in combined_df.iterrows():
-                    st.markdown(f"### {row['Name']} ({row['Email']})")
+            with st.expander(" View Detailed Answers by User"):
+                for name, email, detail_df in all_details:
+                    st.markdown(f"### {name} ({email})")
+                    correct_count = detail_df['is_correct'].sum()
+                    total_count = len(detail_df)
+                    score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
                     col1, col2, col3 = st.columns(3)
                     with col1:
-                        st.metric("Score", f"{row['Score (%)']}%")
+                        st.metric("Score", f"{score_pct:.1f}%")
                     with col2:
-                        st.metric("Correct", f"{row['Correct Answers']}/{row['Total Questions']}")
+                        st.metric("Correct", f"{correct_count}/{total_count}")
                     with col3:
-                        st.metric("Submitted", row['Submitted At'])
+                        st.metric("Questions", total_count)
+                    
+                    # Show detailed answers
+                    display_df = detail_df[['question_id', 'question', 'type', 'your_answer', 'correct_answer', 'is_correct']].copy()
+                    display_df.columns = ['Q#', 'Question', 'Type', 'Your Answer', 'Correct Answer', 'Correct']
+                    st.dataframe(display_df, use_container_width=True, hide_index=True)
                     st.divider()
         
     else:
