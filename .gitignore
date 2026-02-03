@@ -1,0 +1,57 @@
+# Byte-compiled / built files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+env/
+venv/
+
+# IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit secrets/config (do NOT commit secrets)
+.streamlit/secrets.toml
+.streamlit/*.key
+
+# Logs
+*.log
+
+# Jupyter
+.ipynb_checkpoints
+
+# Local env files
+.env
+.env.*
+
+# Type/checker caches
+.mypy_cache/
+.pyre/
+
+# Editor/project files
+.ropeproject/
+
+# Ignore build artifacts
+*.so
+*.dylib
+
+# Keep sample data (do NOT ignore submissions/)
+# submissions/*.csv

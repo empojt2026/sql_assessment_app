@@ -1,0 +1,2 @@
+# Top-level requirements file for deployment — delegates to the package's requirements
+-r sql_assessment_app/requirements.txt
