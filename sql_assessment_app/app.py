@@ -994,17 +994,43 @@ if st.session_state.admin_authenticated:
                         email = email or row.get('Email')
 
                 if not name:
-                    # infer from filename pattern
+                    # infer from filename pattern (robust) or from any cell that looks like an email
                     try:
-                        inferred = file.split('_')
-                        # reverse replace used when saving
-                        email_candidate = file.split('_')[0]
-                        email = email or email_candidate.replace('_at_', '@').replace('_', '.')
+                        # 1) filename patterns like alice_at_company_com_2026... or alice@example.com-like
+                        m = re.search(r"([A-Za-z0-9._%+-]+_at_[A-Za-z0-9._%+-]+)", file)
+                        if m:
+                            candidate = m.group(1)
+                            # strip trailing date-like suffixes if present (e.g. _20260203_000000)
+                            candidate = re.sub(r'(_\d{6,16}.*)$', '', candidate)
+                            email = email or candidate.replace('_at_', '@').replace('_', '.')
+                        else:
+                            # try dot-separated fallback
+                            m2 = re.search(r"([A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,})", file)
+                            if m2:
+                                email = email or m2.group(1)
                     except Exception:
                         pass
 
-                name = name or 'Unknown'
-                email = email or 'Unknown'
+                # 2) scan the dataframe for any cell that looks like a name/email
+                if (not name or not email) and len(df) > 0:
+                    try:
+                        for col in df.columns:
+                            # examine first few non-null values
+                            for v in df[col].astype(str).head(10).values:
+                                if not name and v and len(v.strip()) > 0 and not re.search(r"\d", v):
+                                    # heuristic: treat longer text without digits as a possible name
+                                    if len(v.strip()) > 2 and len(v.split()) <= 4 and any(c.isalpha() for c in v):
+                                        name = name or v.strip()
+                                if not email and '@' in v:
+                                    # accept raw emails
+                                    em = re.search(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", v)
+                                    if em:
+                                        email = email or em.group(0)
+                    except Exception:
+                        pass
+
+                name = (name or 'Unknown')
+                email = (email or 'Unknown')
 
                 # Count correct answers robustly
                 if 'is_correct' in df.columns:
@@ -1156,7 +1182,7 @@ if st.session_state.admin_authenticated:
 # ==========================
 # Student Assessment Section (Only if not in Admin Mode)
 # ==========================
-st.markdown("<h2 style='color: #6B21A8; text-align: center;'>👨‍💼 Employee SQL Training Assessment</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='color: #6B21A8; text-align: center;'>👨‍💼 OJT Assessment</h2>", unsafe_allow_html=True)
 # Subheader removed per request (previously: "Complete 34 comprehensive SQL proficiency questions")
 st.divider()
 
