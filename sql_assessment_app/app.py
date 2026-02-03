@@ -691,7 +691,7 @@ def get_shuffled_questions(user_name):
 # Streamlit App
 # ==========================
 st.set_page_config(
-    page_title="SQL Assessment - Employee Training", 
+    page_title="OJT Assessment", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -947,9 +947,9 @@ else:
 # Admin Dashboard Section (Always Available to Authenticated Admins)
 # ==========================
 if st.session_state.admin_authenticated:
-    st.warning("⚠️ You are in ADMIN MODE - Viewing all employee training submissions")
+    st.warning("⚠️ You are in ADMIN MODE - Viewing all OJT assessment submissions")
     st.divider()
-    st.markdown("<h2 style='color: #6B21A8; text-align: center;'>📊 Employee Training Assessment Dashboard</h2>", unsafe_allow_html=True)
+    st.markdown("<h2 style='color: #6B21A8; text-align: center;'>📊 OJT Assessment Dashboard</h2>", unsafe_allow_html=True)
     
     # Create submissions folder if it doesn't exist
     submissions_dir = os.path.join(os.path.dirname(__file__), 'submissions')
@@ -967,31 +967,67 @@ if st.session_state.admin_authenticated:
         summary_rows = []
         
         for file in submission_files:
+            # ignore temporary/partial in-flight files
+            if file.endswith('.tmp') or file.endswith('.lock'):
+                continue
+            file_path = os.path.join(submissions_dir, file)
             try:
-                df = pd.read_csv(os.path.join(submissions_dir, file))
-                
-                # Extract metadata
+                # skip zero-length / likely partial files
+                if os.path.getsize(file_path) == 0:
+                    continue
+                df = pd.read_csv(file_path)
+
+                # Extract metadata robustly
+                name = None
+                email = None
                 if len(df) > 0:
-                    name = df.iloc[0].get('Name', 'Unknown')
-                    email = df.iloc[0].get('Email', 'Unknown')
-                    
-                    # Count correct answers
-                    correct_count = df['is_correct'].sum() if 'is_correct' in df.columns else 0
-                    total_count = len(df)
-                    score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
-                    
-                    # Create summary for this user
-                    summary_rows.append({
-                        "Name": name,
-                        "Email": email,
-                        "Correct Answers": int(correct_count),
-                        "Total Questions": total_count,
-                        "Score (%)": f"{score_pct:.1f}",
-                        "Submitted At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    })
-                    
-                    # Add detailed rows for later viewing
-                    all_details.append((name, email, df))
+                    # prefer explicit columns
+                    name = df.iloc[0].get('Name') if 'Name' in df.columns else None
+                    email = df.iloc[0].get('Email') if 'Email' in df.columns else None
+
+                # fallback: try to read a SUMMARY row or infer from filename
+                if not name or not email:
+                    # look for SUMMARY row
+                    if 'question_id' in df.columns and any(df['question_id'] == 'SUMMARY'):
+                        row = df[df['question_id'] == 'SUMMARY'].iloc[0]
+                        name = name or row.get('Name')
+                        email = email or row.get('Email')
+
+                if not name:
+                    # infer from filename pattern
+                    try:
+                        inferred = file.split('_')
+                        # reverse replace used when saving
+                        email_candidate = file.split('_')[0]
+                        email = email or email_candidate.replace('_at_', '@').replace('_', '.')
+                    except Exception:
+                        pass
+
+                name = name or 'Unknown'
+                email = email or 'Unknown'
+
+                # Count correct answers robustly
+                if 'is_correct' in df.columns:
+                    correct_count = int(df['is_correct'].sum())
+                else:
+                    # try Best-effort: look for 'Correct Answers' summary column
+                    correct_count = int(df.iloc[0].get('Correct Answers', 0))
+
+                total_count = int(df.iloc[0].get('Total Questions', len(df))) if len(df) > 0 else 0
+                score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
+
+                # Create summary for this user
+                summary_rows.append({
+                    "Name": name,
+                    "Email": email,
+                    "Correct Answers": int(correct_count),
+                    "Total Questions": total_count,
+                    "Score (%)": f"{score_pct:.1f}",
+                    "Submitted At": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                })
+
+                # Add detailed rows for later viewing
+                all_details.append((name, email, df))
             except Exception as e:
                 st.warning(f"Error reading {file}: {e}")
         
@@ -1058,8 +1094,46 @@ if st.session_state.admin_authenticated:
             with st.expander(" View Detailed Answers by User"):
                 for name, email, detail_df in all_details:
                     st.markdown(f"### {name} ({email})")
-                    correct_count = detail_df['is_correct'].sum()
-                    total_count = len(detail_df)
+
+                    # Defensive handling for multiple submission CSV schemas:
+                    # - preferred: per-question rows with 'is_correct' column
+                    # - summary: single-row CSV with 'Correct Answers' and 'Total Questions'
+                    # - legacy/partial: per-question rows with 'your_answer' + 'correct_answer' (no 'is_correct')
+                    if 'is_correct' in detail_df.columns:
+                        correct_count = int(detail_df['is_correct'].sum())
+                        total_count = len(detail_df)
+                        display_df = detail_df[['question_id', 'question', 'type', 'your_answer', 'correct_answer', 'is_correct']].copy()
+                        display_df.columns = ['Q#', 'Question', 'Type', 'Your Answer', 'Correct Answer', 'Correct']
+
+                    elif 'Correct Answers' in detail_df.columns and 'Total Questions' in detail_df.columns:
+                        # summary-style CSV produced by older/alternate exporters
+                        try:
+                            correct_count = int(pd.to_numeric(detail_df['Correct Answers']).iloc[0])
+                        except Exception:
+                            correct_count = 0
+                        try:
+                            total_count = int(pd.to_numeric(detail_df['Total Questions']).iloc[0])
+                        except Exception:
+                            total_count = max(0, int(len(detail_df)))
+                        display_df = pd.DataFrame([{
+                            'Q#': 'SUMMARY', 'Question': '', 'Type': '', 'Your Answer': '', 'Correct Answer': '', 'Correct': ''
+                        }])
+
+                    elif 'your_answer' in detail_df.columns and 'correct_answer' in detail_df.columns:
+                        # infer correctness when explicit column missing
+                        tmp = detail_df.copy()
+                        tmp['is_correct'] = tmp['your_answer'].astype(str) == tmp['correct_answer'].astype(str)
+                        correct_count = int(tmp['is_correct'].sum())
+                        total_count = len(tmp)
+                        display_df = tmp[['question_id', 'question', 'type', 'your_answer', 'correct_answer', 'is_correct']].copy()
+                        display_df.columns = ['Q#', 'Question', 'Type', 'Your Answer', 'Correct Answer', 'Correct']
+
+                    else:
+                        # Unknown schema — show best-effort summary without raising
+                        correct_count = 0
+                        total_count = len(detail_df)
+                        display_df = pd.DataFrame(columns=['Q#', 'Question', 'Type', 'Your Answer', 'Correct Answer', 'Correct'])
+
                     score_pct = (correct_count / total_count * 100) if total_count > 0 else 0
                     col1, col2, col3 = st.columns(3)
                     with col1:
@@ -1068,10 +1142,8 @@ if st.session_state.admin_authenticated:
                         st.metric("Correct", f"{correct_count}/{total_count}")
                     with col3:
                         st.metric("Questions", total_count)
-                    
-                    # Show detailed answers
-                    display_df = detail_df[['question_id', 'question', 'type', 'your_answer', 'correct_answer', 'is_correct']].copy()
-                    display_df.columns = ['Q#', 'Question', 'Type', 'Your Answer', 'Correct Answer', 'Correct']
+
+                    # Show detailed answers (may be empty for summary/unknown schemas)
                     st.dataframe(display_df, use_container_width=True, hide_index=True)
                     st.divider()
         
@@ -1107,16 +1179,18 @@ if st.session_state.shuffled_questions is None or st.session_state.current_user_
     st.session_state.current_q = 0
     st.session_state.answers = []
 
-# Progress bar
-progress = min((st.session_state.current_q + 1) / len(st.session_state.shuffled_questions), 1.0)
-st.progress(progress)
-st.subheader(f"Question {st.session_state.current_q + 1} of {len(st.session_state.shuffled_questions)}")
-
-# Prevent IndexError if current_q is out of bounds
-if st.session_state.current_q >= len(st.session_state.shuffled_questions):
-    st.session_state.current_q = len(st.session_state.shuffled_questions) - 1
-q = st.session_state.shuffled_questions[st.session_state.current_q]
-st.markdown(f"**Question:** {q['question']}")
+# Progress bar (defensive)
+if not st.session_state.shuffled_questions:
+    st.error("No questions available.")
+    st.session_state.show_results = True
+else:
+    # Clamp current_q into the valid index range and compute progress
+    st.session_state.current_q = min(st.session_state.current_q, max(0, len(st.session_state.shuffled_questions) - 1))
+    progress = min((st.session_state.current_q + 1) / len(st.session_state.shuffled_questions), 1.0)
+    st.progress(progress)
+    st.subheader(f"Question {st.session_state.current_q + 1} of {len(st.session_state.shuffled_questions)}")
+    q = st.session_state.shuffled_questions[st.session_state.current_q]
+    st.markdown(f"**Question:** {q['question']}")
 
 # Display description and table information (if available) — hidden for MCQ questions
 if q.get("type") != "mcq":
@@ -1202,8 +1276,10 @@ if q.get("type") == "mcq":
                 # Check if selected answers match correct answers
                 correct = set(selected_options) == set(q["correct_answers"])
                 
-                # Store answer
+                # Store answer (include Name/Email in the saved payload)
                 st.session_state.answers.append({
+                    "Name": st.session_state.get('student_name', ''),
+                    "Email": st.session_state.get('student_email', ''),
                     "question_id": q["id"],
                     "question": q["question"],
                     "your_answer": ", ".join(selected_options),
@@ -1211,13 +1287,18 @@ if q.get("type") == "mcq":
                     "is_correct": correct,
                     "type": "mcq"
                 })
-                # Auto-save answers after each submission
+                # Auto-save answers after each submission (include Name/Email so admin can identify partials)
                 import pandas as pd
                 import os
                 user_email = st.session_state.get('student_email', 'unknown').replace('@', '_at_').replace('.', '_')
-                save_path = os.path.join(os.path.dirname(__file__), 'submissions', f"{user_email}_partial.csv")
+                save_dir = os.path.join(os.path.dirname(__file__), 'submissions')
+                os.makedirs(save_dir, exist_ok=True)
+                save_path = os.path.join(save_dir, f"{user_email}_partial.csv")
                 df = pd.DataFrame(st.session_state.answers)
-                df.to_csv(save_path, index=False)
+                # atomic write
+                tmp_path = save_path + '.tmp'
+                df.to_csv(tmp_path, index=False)
+                os.replace(tmp_path, save_path)
                 
                 # Show feedback
                 st.session_state.show_feedback = True
@@ -1239,7 +1320,9 @@ if q.get("type") == "mcq":
         else:
             if st.button("Show Results", disabled=not st.session_state.show_feedback, key=f"results_mcq_{st.session_state.current_q}"):
                 st.session_state.show_feedback = False
-                st.session_state.current_q = len(st.session_state.shuffled_questions)
+                # clamp to last valid index and mark that results should be shown
+                st.session_state.current_q = max(0, len(st.session_state.shuffled_questions) - 1)
+                st.session_state.show_results = True
     
     # Show feedback for MCQ
     if st.session_state.show_feedback:
@@ -1307,8 +1390,10 @@ else:
                 
                 correct = normalized_candidate == normalized_solution
                 
-                # Store answer
+                # Store answer (include Name/Email in the saved payload)
                 st.session_state.answers.append({
+                    "Name": st.session_state.get('student_name', ''),
+                    "Email": st.session_state.get('student_email', ''),
                     "question_id": q["id"],
                     "question": q["question"],
                     "your_answer": user_sql,
@@ -1316,13 +1401,18 @@ else:
                     "is_correct": correct,
                     "type": "sql"
                 })
-                # Auto-save answers after each submission
+                # Auto-save answers after each submission (include Name/Email so admin can identify partials)
                 import pandas as pd
                 import os
                 user_email = st.session_state.get('student_email', 'unknown').replace('@', '_at_').replace('.', '_')
-                save_path = os.path.join(os.path.dirname(__file__), 'submissions', f"{user_email}_partial.csv")
+                save_dir = os.path.join(os.path.dirname(__file__), 'submissions')
+                os.makedirs(save_dir, exist_ok=True)
+                save_path = os.path.join(save_dir, f"{user_email}_partial.csv")
                 df = pd.DataFrame(st.session_state.answers)
-                df.to_csv(save_path, index=False)
+                # atomic write
+                tmp_path = save_path + '.tmp'
+                df.to_csv(tmp_path, index=False)
+                os.replace(tmp_path, save_path)
                 
                 # Show feedback
                 st.session_state.show_feedback = True
@@ -1344,7 +1434,9 @@ else:
         else:
             if st.button("Show Results", disabled=not st.session_state.show_feedback, key=f"results_sql_{st.session_state.current_q}"):
                 st.session_state.show_feedback = False
-                st.session_state.current_q = len(st.session_state.shuffled_questions)
+                # clamp to last valid index and mark that results should be shown
+                st.session_state.current_q = max(0, len(st.session_state.shuffled_questions) - 1)
+                st.session_state.show_results = True
     
     # Show feedback for SQL
     if st.session_state.show_feedback:
@@ -1407,14 +1499,16 @@ if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or
         if not os.path.exists("submissions"):
             os.makedirs("submissions")
         
-        # Get current submission datetime
+        # Get current submission datetime and ensure unique filename for concurrent submissions
         submission_datetime = datetime.now()
+        import uuid
+        unique_suffix = submission_datetime.strftime('%Y%m%d_%H%M%S_%f') + '_' + uuid.uuid4().hex[:8]
         
-        # Create submission data
+        # Create submission data (guarantee Name/Email present)
         submission_data = {
-            "Name": student_name_final,
-            "Email": student_email_final,
-            "Submitted At": submission_datetime.strftime("%Y-%m-%d %H:%M:%S"),
+            "Name": student_name_final or student_name,
+            "Email": student_email_final or student_email,
+            "Submitted At": submission_datetime.strftime("%Y-%m-%d %H:%M:%S.%f"),
             "Total Questions": total,
             "Correct Answers": correct_count,
             "Score (%)": round(score_percentage, 2)
@@ -1422,13 +1516,16 @@ if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or
         
         # Add individual question results
         for i, ans in enumerate(st.session_state.answers):
-            submission_data[f"Q{ans['question_id']}_Answer"] = ans['is_correct']
+            submission_data[f"Q{ans['question_id']}_Answer"] = ans.get('is_correct')
         
-        # Save to submissions folder with timestamp
-        submission_file = f"submissions/{student_email_final}_{submission_datetime.strftime('%Y%m%d_%H%M%S')}.csv"
+        # Save to submissions folder with unique filename (atomic)
+        os.makedirs('submissions', exist_ok=True)
+        submission_file = f"submissions/{(student_email_final or student_email).replace('@','_at_').replace('.','_')}_{unique_suffix}.csv"
         submission_df = pd.DataFrame([submission_data])
-        submission_df.to_csv(submission_file, index=False)
-        st.success(f"? Your results have been saved! (Submitted: {submission_datetime.strftime('%Y-%m-%d %H:%M:%S')})")
+        tmp_file = submission_file + '.tmp'
+        submission_df.to_csv(tmp_file, index=False)
+        os.replace(tmp_file, submission_file)
+        st.success(f"✅ Your results have been saved! (Submitted: {submission_datetime.strftime('%Y-%m-%d %H:%M:%S')})")
     
     # Detailed results
     with st.expander("View Detailed Results"):
@@ -1456,8 +1553,8 @@ if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or
     st.divider()
     st.markdown("""
         <div style='text-align: center; padding: 2rem; background: linear-gradient(135deg, rgba(107, 33, 168, 0.05) 0%, rgba(157, 78, 221, 0.05) 100%); border-radius: 8px; margin-top: 2rem;'>
-            <p style='color: #6B21A8; font-weight: 600; margin: 0;'>SQL Assessment Platform</p>
-            <p style='color: #757575; font-size: 13px; margin: 0.5rem 0 0 0;'>SQL Mastery Program for Employee Training</p>
-            <p style='color: #A78BFA; font-size: 11px; margin: 1rem 0 0 0;'>© 2026 SQL Assessment. All rights reserved.</p>
+            <p style='color: #6B21A8; font-weight: 600; margin: 0;'>OJT Assessment Platform</p>
+            <p style='color: #757575; font-size: 13px; margin: 0.5rem 0 0 0;'>OJT Assessment Program for Employee Training</p>
+            <p style='color: #A78BFA; font-size: 11px; margin: 1rem 0 0 0;'>© 2026 OJT Assessment. All rights reserved.</p>
         </div>
     """, unsafe_allow_html=True)
