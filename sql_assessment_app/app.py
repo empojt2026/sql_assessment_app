@@ -522,8 +522,30 @@ QUESTIONS = [
             "relationship": "Calculate: total = SUM(quantity * unitprice * (1 - discount))"
         },
         "solution":"SELECT c.customerid, c.companyname, SUM(od.quantity * od.unitprice) AS totalswithoutdiscount, SUM(od.quantity * od.unitprice * (1 - discount)) AS totalswithdiscount FROM customers AS c JOIN orders AS o ON o.customerid = c.customerid JOIN orderdetails AS od ON o.orderid = od.orderid WHERE orderdate >= '20160101' AND orderdate < '20170101' GROUP BY c.customerid, c.companyname HAVING SUM(od.quantity * od.unitprice * (1 - discount)) > 10000 ORDER BY totalswithdiscount DESC"
-    }
+    },
+    {"id": 201, "type": "mcq", "question": "What will COUNT(column_name) return if the column contains NULL values?", "options": ["A) Total rows including NULLs", "B) Total rows excluding NULLs", "C) Only NULL rows", "D) Error"], "correct_answers": ["B"], "complexity": "easy", "topic": "SQL"},
+    {"id": 202, "type": "mcq", "question": "What is the result of the following query? SELECT COUNT(*) FROM employees WHERE salary > 5000;", "options": ["A) Number of non-NULL salaries", "B) Number of rows where salary is not NULL", "C) Number of rows where salary > 5000", "D) Total number of rows"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 203, "type": "mcq", "question": "Which clause is evaluated first in a SQL SELECT statement?", "options": ["A) SELECT", "B) ORDER BY", "C) FROM", "D) WHERE"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 204, "type": "mcq", "question": "What is the difference between WHERE and HAVING?", "options": ["A) WHERE works on groups, HAVING works on rows", "B) Both are identical", "C) WHERE filters rows, HAVING filters groups", "D) HAVING executes before WHERE"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 205, "type": "mcq", "question": "Which query correctly returns departments with more than 5 employees?", "options": ["A) SELECT dept_id FROM emp WHERE COUNT(*) > 5;", "B) SELECT dept_id FROM emp GROUP BY dept_id WHERE COUNT(*) > 5;", "C) SELECT dept_id FROM emp GROUP BY dept_id HAVING COUNT(*) > 5;", "D) SELECT dept_id FROM emp HAVING COUNT(*) > 5;"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 206, "type": "mcq", "question": "What does the following query return? SELECT DISTINCT dept_id FROM employees;", "options": ["A) All rows", "B) One row per employee", "C) Unique department IDs", "D) Department count"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 207, "type": "mcq", "question": "Which JOIN returns rows even when there is no match in the right table?", "options": ["A) INNER JOIN", "B) FULL JOIN", "C) LEFT JOIN", "D) CROSS JOIN"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 208, "type": "mcq", "question": "What happens if a subquery returns more than one row but is used with = ?", "options": ["A) First row is used", "B) All rows are compared", "C) Query fails with an error", "D) NULL is returned"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 209, "type": "mcq", "question": "Which operator should be used when a subquery returns multiple rows?", "options": ["A) =", "B) EXISTS", "C) IN", "D) LIKE"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 210, "type": "mcq", "question": "What does EXISTS return?", "options": ["A) Number of rows", "B) Actual data", "C) TRUE or FALSE", "D) NULL"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 211, "type": "mcq", "question": "What is the result of this query? SELECT 1 + NULL;", "options": ["A) 1", "B) 0", "C) NULL", "D) Error"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 212, "type": "mcq", "question": "Which SQL operation is NOT reversible using ROLLBACK?", "options": ["A) INSERT", "B) UPDATE", "C) DELETE", "D) DROP TABLE"], "correct_answers": ["D"], "complexity": "medium", "topic": "SQL"},
+    {"id": 213, "type": "mcq", "question": "What does TRUNCATE do compared to DELETE?", "options": ["A) Deletes rows one by one", "B) Can be rolled back", "C) Fires triggers", "D) Removes all rows efficiently and cannot be rolled back"], "correct_answers": ["D"], "complexity": "medium", "topic": "SQL"},
+    {"id": 214, "type": "mcq", "question": "Which query returns the second highest salary?", "options": ["A) SELECT MAX(salary) FROM emp;", "B) SELECT salary FROM emp ORDER BY salary LIMIT 1;", "C) SELECT MAX(salary) FROM emp WHERE salary < (SELECT MAX(salary) FROM emp);", "D) SELECT salary FROM emp WHERE salary = 2;"], "correct_answers": ["C"], "complexity": "medium", "topic": "SQL"},
+    {"id": 215, "type": "mcq", "question": "What does UNION do by default?", "options": ["A) Combines result sets including duplicates", "B) Sorts data", "C) Combines result sets and removes duplicates", "D) Joins tables"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 216, "type": "mcq", "question": "Which SQL keyword is used to return rows where a column value is missing?", "options": ["A) = NULL", "B) NOT NULL", "C) IS NULL", "D) EMPTY"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 217, "type": "mcq", "question": "What happens if GROUP BY is used without aggregate functions?", "options": ["A) Error", "B) Returns random rows", "C) Returns distinct combinations of grouped columns", "D) Returns NULL"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 218, "type": "mcq", "question": "Which constraint allows only values that meet a specific condition?", "options": ["A) UNIQUE", "B) FOREIGN KEY", "C) CHECK", "D) DEFAULT"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 219, "type": "mcq", "question": "What does a CROSS JOIN produce?", "options": ["A) Matched rows only", "B) Left table rows only", "C) Cartesian product of both tables", "D) Grouped rows"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
+    {"id": 220, "type": "mcq", "question": "Which SQL feature guarantees all statements succeed or none are applied?", "options": ["A) Index", "B) Trigger", "C) View", "D) Transaction"], "correct_answers": ["D"], "complexity": "easy", "topic": "SQL"},
 ]
+
+
 
 # ==========================
 # Power BI Question Bank with MCQ
@@ -648,15 +670,56 @@ def get_shuffled_questions(user_name):
     seed = int(hashlib.md5(user_name.lower().encode()).hexdigest(), 16)
     random.seed(seed)
     
-    # Select 20 SQL questions: beginner (1) and intermediate (2) only, no advanced
-    # Exclude questions with multiple JOINs to keep active set simpler
-    sql_questions = [
-        q for q in QUESTIONS 
-        if q.get('solution') and q['solution'].lower().count('join') <= 1 
-        and q.get('complexity', 1) in [1, 2]
+    # Select 20 SQL questions as TWO groups: 10 MCQ (topic='SQL' & type='mcq') + 10 practice SQL (type='sql')
+    # Keep same complexity restrictions (beginner + intermediate) and JOIN-safety for practice items.
+    def _complexity_value_local(q):
+        c = q.get('complexity', 1)
+        if isinstance(c, int):
+            return c
+        if isinstance(c, str):
+            return {'easy': 1, 'medium': 2, 'hard': 3}.get(c.lower(), 2)
+        try:
+            return int(c)
+        except Exception:
+            return 2
+
+    # Pools
+    sql_mcq_pool = [
+        q for q in QUESTIONS
+        if q.get('type') == 'mcq' and q.get('topic', '').lower() == 'sql' and _complexity_value_local(q) in (1, 2)
     ]
-    random.shuffle(sql_questions)
-    selected_sql = sql_questions[:20]
+    sql_practice_pool = [
+        q for q in QUESTIONS
+        if q.get('solution') and q.get('type') != 'mcq' and q['solution'].lower().count('join') <= 1 and _complexity_value_local(q) in (1, 2)
+    ]
+
+    random.shuffle(sql_mcq_pool)
+    random.shuffle(sql_practice_pool)
+
+    # Ensure 10 MCQ + 10 practice; if insufficient fill from the other pool (best-effort)
+    selected_mcq = sql_mcq_pool[:10]
+    if len(selected_mcq) < 10:
+        needed = 10 - len(selected_mcq)
+        selected_mcq += sql_practice_pool[:needed]
+        sql_practice_pool = sql_practice_pool[needed:]
+
+    selected_practice = sql_practice_pool[:10]
+    if len(selected_practice) < 10:
+        needed = 10 - len(selected_practice)
+        selected_practice += [q for q in sql_mcq_pool if q not in selected_mcq][:needed]
+
+    # Final SQL selection (best-effort to reach 20)
+    selected_sql = (selected_mcq + selected_practice)[:20]
+
+    # If we could not reach 20 SQL (very small banks), fall back to original behavior
+    if len(selected_sql) < 20:
+        sql_questions = [
+            q for q in QUESTIONS 
+            if q.get('solution') and q['solution'].lower().count('join') <= 1 
+            and _complexity_value_local(q) in [1, 2]
+        ]
+        random.shuffle(sql_questions)
+        selected_sql = sql_questions[:20]
     
     # Select 20 PowerBI questions: prefer easy (1), fill with medium (2) if needed
     def _complexity_value(q):

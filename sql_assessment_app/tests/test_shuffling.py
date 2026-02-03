@@ -37,11 +37,19 @@ def test_shuffled_questions_length_and_composition():
     assert isinstance(shuffled, list)
     assert len(shuffled) == 40, "Each candidate must receive 40 questions"
 
-    # composition: 20 SQL (complexity 1 or 2, solution present, <=1 join)
+    # composition: 20 SQL (split into 10 MCQ + 10 practice SQL)
     sql_qs = [q for q in shuffled if q in QUESTIONS]
     assert len(sql_qs) == 20, "There must be exactly 20 SQL questions"
-    for q in sql_qs:
-        assert q.get("solution"), "SQL question must have a solution"
+
+    # enforce 10 MCQ and 10 practice SQL (type-based)
+    sql_mcq_count = sum(1 for q in sql_qs if q.get('type') == 'mcq')
+    # practice SQL items are represented as questions with a 'solution' (no type == 'mcq')
+    sql_practice_count = sum(1 for q in sql_qs if q.get('type') != 'mcq')
+    assert sql_mcq_count == 10 and sql_practice_count == 10, f"Expected 10 SQL MCQ and 10 SQL practice (got mcq={sql_mcq_count}, practice={sql_practice_count})"
+
+    # verify practice SQL items still have solutions and are not too complex
+    for q in (q for q in sql_qs if q.get('type') == 'sql'):
+        assert q.get("solution"), "SQL practice question must have a solution"
         # must not contain multiple JOINs
         assert q['solution'].lower().count('join') <= 1
         # compute complexity with same heuristic used by the app (lightweight)
@@ -68,7 +76,7 @@ def test_shuffled_questions_length_and_composition():
         if len(q.get('tables', [])) > 2:
             complexity_score += 1
         inferred = 3 if complexity_score >= 4 else (2 if complexity_score >= 1.5 else 1)
-        assert inferred in (1, 2), f"Question {q.get('id')} is inferred advanced but was selected: score={complexity_score}" 
+        assert inferred in (1, 2), f"Question {q.get('id')} is inferred advanced but was selected: score={complexity_score}"
 
     # composition: 20 PowerBI (prefer complexity 1, allow complexity 2)
     pb_qs = [q for q in shuffled if q in POWERBI_QUESTIONS]
