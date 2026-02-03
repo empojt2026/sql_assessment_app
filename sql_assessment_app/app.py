@@ -1117,10 +1117,13 @@ if q.get("type") == "mcq":
     # Prepare lock/view flags for this question
     lock_key = f"locked_{q['id']}"
     view_key = f"viewed_solution_{q['id']}"
+    submitted_key = f"submitted_{q['id']}"
     if lock_key not in st.session_state:
         st.session_state[lock_key] = False
     if view_key not in st.session_state:
         st.session_state[view_key] = False
+    if submitted_key not in st.session_state:
+        st.session_state[submitted_key] = False
 
     if is_multiselect:
         st.info("⚠️ Select all that apply")
@@ -1141,7 +1144,7 @@ if q.get("type") == "mcq":
     col1, col2 = st.columns([1, 1])
     
     with col1:
-        if st.button("Submit Answer", type="primary", key=f"submit_mcq_{st.session_state.current_q}", disabled=st.session_state[lock_key]):
+        if st.button("Submit Answer", type="primary", key=f"submit_mcq_{st.session_state.current_q}", disabled=(st.session_state[lock_key] or st.session_state[submitted_key])):
             if not selected_options:
                 st.warning("Please select an answer before submitting.")
             else:
@@ -1172,6 +1175,8 @@ if q.get("type") == "mcq":
                     st.session_state.feedback_message = "✅ Correct!"
                 else:
                     st.session_state.feedback_message = "❌ Incorrect."
+                # mark as submitted to prevent re-submission
+                st.session_state[submitted_key] = True
     
     with col2:
         if st.session_state.current_q + 1 < len(st.session_state.shuffled_questions):
@@ -1215,6 +1220,8 @@ if q.get("type") == "mcq":
                                 st.session_state[key] = False
                         st.session_state.show_feedback = False
                         st.session_state.feedback_message = ""
+                        # allow re-submission after editing
+                        st.session_state[submitted_key] = False
                         st.rerun()
 else:
     # SQL Question
@@ -1230,13 +1237,16 @@ else:
     # Prepare lock/view flags for this question
     lock_key = f"locked_{q['id']}"
     view_key = f"viewed_solution_{q['id']}"
+    submitted_key = f"submitted_{q['id']}"
     if lock_key not in st.session_state:
         st.session_state[lock_key] = False
     if view_key not in st.session_state:
         st.session_state[view_key] = False
+    if submitted_key not in st.session_state:
+        st.session_state[submitted_key] = False
 
     with col1:
-        if st.button("Submit Answer", type="primary", key=f"submit_sql_{st.session_state.current_q}", disabled=st.session_state[lock_key]):
+        if st.button("Submit Answer", type="primary", key=f"submit_sql_{st.session_state.current_q}", disabled=(st.session_state[lock_key] or st.session_state[submitted_key])):
             if not user_sql.strip():
                 st.warning("Please enter an answer before submitting.")
             else:
@@ -1270,6 +1280,8 @@ else:
                     st.session_state.feedback_message = "✅ Correct!"
                 else:
                     st.session_state.feedback_message = "❌ Incorrect."
+                # mark as submitted to prevent re-submission
+                st.session_state[submitted_key] = True
     
     with col2:
         if st.session_state.current_q + 1 < len(st.session_state.shuffled_questions):
@@ -1310,6 +1322,8 @@ else:
                                 break
                         st.session_state.show_feedback = False
                         st.session_state.feedback_message = ""
+                        # allow re-submission after editing
+                        st.session_state[submitted_key] = False
                         st.rerun()
 
 # Show results when all questions are completed
