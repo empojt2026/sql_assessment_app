@@ -641,7 +641,7 @@ for question in POWERBI_QUESTIONS:
 def get_shuffled_questions(user_name):
     """
     Create a deterministic shuffled order of questions for a user.
-    - Returns 20 SQL questions (beginner + intermediate only) + 20 PowerBI questions (beginner only)
+    - Returns 20 SQL questions (beginner + intermediate only) + 20 PowerBI questions (prefer easy, fill with medium if needed)
     - Uses user's name as seed for consistent randomization
     """
     # Create a hash seed from the user's name
@@ -658,10 +658,15 @@ def get_shuffled_questions(user_name):
     random.shuffle(sql_questions)
     selected_sql = sql_questions[:20]
     
-    # Select 20 PowerBI questions: beginner only (complexity 1)
-    powerbi_questions = [q for q in POWERBI_QUESTIONS if q.get('complexity', 1) == 1]
-    random.shuffle(powerbi_questions)
-    selected_powerbi = powerbi_questions[:20]
+    # Select 20 PowerBI questions: prefer easy (1), fill with medium (2) if needed
+    powerbi_easy = [q for q in POWERBI_QUESTIONS if q.get('complexity', 1) == 1]
+    powerbi_medium = [q for q in POWERBI_QUESTIONS if q.get('complexity', 1) == 2]
+    random.shuffle(powerbi_easy)
+    random.shuffle(powerbi_medium)
+    selected_powerbi = powerbi_easy[:20]
+    if len(selected_powerbi) < 20:
+        selected_powerbi += powerbi_medium[:20 - len(selected_powerbi)]
+    selected_powerbi = selected_powerbi[:20]
     
     # Combine and shuffle together
     all_questions = selected_sql + selected_powerbi
@@ -1078,6 +1083,9 @@ progress = min((st.session_state.current_q + 1) / len(st.session_state.shuffled_
 st.progress(progress)
 st.subheader(f"Question {st.session_state.current_q + 1} of {len(st.session_state.shuffled_questions)}")
 
+# Prevent IndexError if current_q is out of bounds
+if st.session_state.current_q >= len(st.session_state.shuffled_questions):
+    st.session_state.current_q = len(st.session_state.shuffled_questions) - 1
 q = st.session_state.shuffled_questions[st.session_state.current_q]
 st.markdown(f"**Question:** {q['question']}")
 
@@ -1363,7 +1371,10 @@ if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or
     st.metric("Your Score", f"{correct_count}/{total} ({score_percentage:.1f}%)")
     
     # Save submission to CSV
-    if student_name and student_email:
+    # Always use the latest values from the input fields for name/email
+    student_name_final = st.session_state.get('student_name', student_name)
+    student_email_final = st.session_state.get('student_email', student_email)
+    if student_name_final and student_email_final:
         if not os.path.exists("submissions"):
             os.makedirs("submissions")
         
@@ -1372,8 +1383,8 @@ if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or
         
         # Create submission data
         submission_data = {
-            "Name": student_name,
-            "Email": student_email,
+            "Name": student_name_final,
+            "Email": student_email_final,
             "Submitted At": submission_datetime.strftime("%Y-%m-%d %H:%M:%S"),
             "Total Questions": total,
             "Correct Answers": correct_count,
@@ -1385,7 +1396,7 @@ if (st.session_state.current_q >= len(st.session_state.shuffled_questions) or
             submission_data[f"Q{ans['question_id']}_Answer"] = ans['is_correct']
         
         # Save to submissions folder with timestamp
-        submission_file = f"submissions/{student_email}_{submission_datetime.strftime('%Y%m%d_%H%M%S')}.csv"
+        submission_file = f"submissions/{student_email_final}_{submission_datetime.strftime('%Y%m%d_%H%M%S')}.csv"
         submission_df = pd.DataFrame([submission_data])
         submission_df.to_csv(submission_file, index=False)
         st.success(f"? Your results have been saved! (Submitted: {submission_datetime.strftime('%Y-%m-%d %H:%M:%S')})")
