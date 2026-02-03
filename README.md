@@ -1,1 +1,0 @@
-# sql_assessment_app
