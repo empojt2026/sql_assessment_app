@@ -659,8 +659,21 @@ def get_shuffled_questions(user_name):
     selected_sql = sql_questions[:20]
     
     # Select 20 PowerBI questions: prefer easy (1), fill with medium (2) if needed
-    powerbi_easy = [q for q in POWERBI_QUESTIONS if q.get('complexity', 1) == 1]
-    powerbi_medium = [q for q in POWERBI_QUESTIONS if q.get('complexity', 1) == 2]
+    def _complexity_value(q):
+        c = q.get('complexity', 1)
+        # accept numeric or string labels
+        if isinstance(c, int):
+            return c
+        if isinstance(c, str):
+            mapping = {'easy': 1, 'medium': 2, 'hard': 3}
+            return mapping.get(c.lower(), 2)
+        try:
+            return int(c)
+        except Exception:
+            return 2
+
+    powerbi_easy = [q for q in POWERBI_QUESTIONS if _complexity_value(q) == 1]
+    powerbi_medium = [q for q in POWERBI_QUESTIONS if _complexity_value(q) == 2]
     random.shuffle(powerbi_easy)
     random.shuffle(powerbi_medium)
     selected_powerbi = powerbi_easy[:20]
@@ -881,6 +894,22 @@ if "shuffled_questions" not in st.session_state:
     st.session_state.shuffled_questions = None
 if "current_user_name" not in st.session_state:
     st.session_state.current_user_name = None
+
+# Ensure required runtime directories exist and are correctly mapped to this module
+SUBMISSIONS_DIR = os.path.join(os.path.dirname(__file__), "submissions")
+if not os.path.exists(SUBMISSIONS_DIR):
+    try:
+        os.makedirs(SUBMISSIONS_DIR, exist_ok=True)
+    except Exception:
+        # If we cannot create the directory, admin UI will report issues later — keep going
+        pass
+# Add .gitkeep so repo keeps the directory (if nothing else is present)
+gitkeep = os.path.join(SUBMISSIONS_DIR, ".gitkeep")
+if not os.path.exists(gitkeep):
+    try:
+        open(gitkeep, "a").close()
+    except Exception:
+        pass
 
 # ==========================
 # Admin Mode Check - Show at Top
