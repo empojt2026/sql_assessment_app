@@ -23,3 +23,13 @@ def test_submission_filename_uniqueness_present():
 def test_admin_infers_email_from_filename():
     # admin aggregation should include fallback inference from filename
     assert "replace('_at_','@')" in SRC or 'infer from filename' in SRC or 'inferred' in SRC
+
+
+def test_mcq_letter_extraction_handles_paren_and_dot():
+    """Ensure MCQ option-letter extraction is robust for both 'A.' and 'A)' formats.
+    - repository must contain at least one question using the ')' style (SQL bank uses this)
+    - app.py must use a regex-based extraction (prevents regression where full option text was compared)
+    """
+    assert "re.match(r'^\\s*([A-Za-z])'" in SRC, "expected regex-based option-letter extraction in app.py"
+    # ensure at least one MCQ option uses the 'A)' style (we observed SQL bank uses this)
+    assert 'C) Cartesian product of both tables' in SRC or 'A) ' in SRC, "expected at least one MCQ option using ')' formatting"

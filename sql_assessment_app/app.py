@@ -1367,8 +1367,13 @@ if q.get("type") == "mcq":
         st.info("⚠️ Select all that apply")
         for option in q["options"]:
             if st.checkbox(option, key=f"option_{st.session_state.current_q}_{option}", disabled=st.session_state[lock_key]):
-                # Extract letter (A, B, C, D)
-                letter = option.split(".")[0].strip()
+                # Extract letter (A, B, C, D) robustly (accept both 'A.' and 'A)')
+                m = re.match(r'^\s*([A-Za-z])', option)
+                if m:
+                    letter = m.group(1).upper()
+                else:
+                    # fallback: take first non-whitespace character
+                    letter = option.strip()[0].upper()
                 selected_options.append(letter)
     else:
         # Use a placeholder first option so no real answer is pre-selected
@@ -1376,7 +1381,11 @@ if q.get("type") == "mcq":
         options_with_placeholder = [placeholder] + q["options"]
         selected_option = st.radio("Select the correct answer:", options_with_placeholder, index=0, key=f"option_{st.session_state.current_q}")
         if selected_option and selected_option != placeholder:
-            letter = selected_option.split(".")[0].strip()
+            m = re.match(r'^\s*([A-Za-z])', selected_option)
+            if m:
+                letter = m.group(1).upper()
+            else:
+                letter = selected_option.strip()[0].upper()
             selected_options = [letter]
     
     col1, col2 = st.columns([1, 1])
