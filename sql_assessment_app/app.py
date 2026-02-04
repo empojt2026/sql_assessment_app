@@ -63,465 +63,207 @@ def parse_sample_text(sample_text):
 # ==========================
 QUESTIONS = [
     {
-        "id":1, 
-        "question":"Which shippers do we have?", 
-        "description": "Retrieve a list of all shipping companies (shippers) available in the database. This helps users identify every carrier that can be used for order deliveries, which is useful for logistics and supply chain analysis.",
+        "id": 1,
+        "question": "Which shippers do we have?",
+        "description": "Retrieve a list of all shipping companies (shippers) available in the database. Useful for logistics and supply-chain analysis.",
         "tables": ["shippers"],
-        "table_info": {
-            "shippers": {
-                "columns": ["shipperid (INT, PK)", "companyname (VARCHAR)", "phone (VARCHAR)"],
-                "sample": "shipperid: 1, companyname: 'Speedy Express', phone: '(503) 555-9831'"
-            }
-        },
-        "solution":"SELECT * FROM shippers"
+        "table_info": {"shippers": {"columns": ["shipperid (INT, PK)", "companyname (VARCHAR)", "phone (VARCHAR)"], "sample": "shipperid: 1, companyname: 'Speedy Express', phone: '(503) 555-9831'"}},
+        "solution": "SELECT * FROM shippers"
     },
     {
-        "id":2, 
-        "question":"Certain fields from Categories", 
-        "description": "Extract the name and description of each product category. This query helps users understand how products are grouped and categorized in the database, which is important for inventory management and reporting.",
+        "id": 2,
+        "question": "Certain fields from Categories",
+        "description": "Extract the name and description of each product category for inventory reporting.",
         "tables": ["categories"],
-        "table_info": {
-            "categories": {
-                "columns": ["categoryid (INT, PK)", "categoryname (VARCHAR)", "description (TEXT)"],
-                "sample": "categoryid: 1, categoryname: 'Beverages', description: 'Soft drinks, coffees, teas...'"
-            }
-        },
-        "solution":"SELECT categoryname, description FROM categories"
+        "table_info": {"categories": {"columns": ["categoryid (INT, PK)", "categoryname (VARCHAR)", "description (TEXT)"], "sample": "categoryid: 1, categoryname: 'Beverages', description: 'Soft drinks, coffees, teas...'"}},
+        "solution": "SELECT categoryname, description FROM categories"
     },
     {
-        "id":3, 
-        "question":"Sales Representatives", 
-        "description": "List all employees whose job title is 'Sales Representative'. Display their names and hire dates to track the composition and tenure of the sales team, which is useful for HR and sales management.",
+        "id": 3,
+        "question": "Sales Representatives",
+        "description": "List employees with the title 'Sales Representative' and their hire dates.",
         "tables": ["employees"],
-        "table_info": {
-            "employees": {
-                "columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "title (VARCHAR)", "hiredate (DATE)"],
-                "sample": "employeeid: 1, firstname: 'Nancy', lastname: 'Davolio', title: 'Sales Representative', hiredate: '1992-05-01'"
-            }
-        },
-        "solution":"SELECT firstname, lastname, hiredate FROM employees WHERE title = 'Sales Representative'"
+        "table_info": {"employees": {"columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "title (VARCHAR)", "hiredate (DATE)"], "sample": "employeeid: 1, firstname: 'Nancy', lastname: 'Davolio', title: 'Sales Representative', hiredate: '1992-05-01'"}},
+        "solution": "SELECT firstname, lastname, hiredate FROM employees WHERE title = 'Sales Representative'"
     },
     {
-        "id":4, 
-        "question":"Sales Representatives in the United States", 
-        "description": "Filter the list of sales representatives to show only those based in the United States. This helps regional managers focus on the US sales team for performance reviews or territory planning.",
+        "id": 4,
+        "question": "Sales Representatives in the United States",
+        "description": "Filter sales representatives to those based in the United States.",
         "tables": ["employees"],
-        "table_info": {
-            "employees": {
-                "columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "title (VARCHAR)", "country (VARCHAR)", "hiredate (DATE)"],
-                "sample": "employeeid: 1, firstname: 'Nancy', lastname: 'Davolio', title: 'Sales Representative', country: 'USA', hiredate: '1992-05-01'"
-            }
-        },
-        "solution":"SELECT firstname, lastname, hiredate FROM employees WHERE title = 'Sales Representative' AND country = 'USA'"
+        "table_info": {"employees": {"columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "title (VARCHAR)", "country (VARCHAR)", "hiredate (DATE)"], "sample": "employeeid: 1, firstname: 'Nancy', lastname: 'Davolio', country: 'USA'"}},
+        "solution": "SELECT firstname, lastname, hiredate FROM employees WHERE title = 'Sales Representative' AND country = 'USA'"
     },
     {
-        "id":5, 
-        "question":"Orders placed by specific EmployeeID", 
-        "description": "Retrieve all orders that were handled by the employee with EmployeeID 5. This query is useful for tracking the sales performance and order history of a specific employee, such as for performance reviews or commission calculations.",
+        "id": 5,
+        "question": "Orders placed by specific EmployeeID",
+        "description": "Retrieve all orders handled by EmployeeID = 5.",
         "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "employeeid (INT, FK)", "orderdate (DATE)", "shipcountry (VARCHAR)"],
-                "sample": "orderid: 10248, customerid: 'VINET', employeeid: 5, orderdate: '1996-07-04', shipcountry: 'France'"
-            }
-        },
-        "solution":"SELECT * FROM orders WHERE employeeid = '5'"
+        "table_info": {"orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "employeeid (INT, FK)", "orderdate (DATE)", "shipcountry (VARCHAR)"], "sample": "orderid: 10248, customerid: 'VINET', employeeid: 5, orderdate: '1996-07-04'"}},
+        "solution": "SELECT * FROM orders WHERE employeeid = '5'"
     },
+
     {
-        "id":6, 
-        "question":"Suppliers and ContactTitles", 
-        "description": "Find all suppliers, excluding those whose contact title is 'Marketing Manager'. This helps identify key decision makers and procurement contacts at supplier organizations, which is important for business-to-business communications.",
+        "id": 6,
+        "question": "Suppliers and ContactTitles",
+        "description": "Find suppliers excluding those whose contact title is 'Marketing Manager'.",
         "tables": ["suppliers"],
-        "table_info": {
-            "suppliers": {
-                "columns": ["supplierid (INT, PK)", "companyname (VARCHAR)", "contactname (VARCHAR)", "contacttitle (VARCHAR)"],
-                "sample": "supplierid: 1, companyname: 'Exotic Liquids', contactname: 'Charlotte Cooper', contacttitle: 'Purchasing Manager'"
-            }
-        },
-        "solution":"SELECT supplierid, contactname, contacttitle FROM suppliers WHERE contacttitle <> 'Marketing Manager'"
+        "table_info": {"suppliers": {"columns": ["supplierid (INT, PK)", "companyname (VARCHAR)", "contactname (VARCHAR)", "contacttitle (VARCHAR)"], "sample": "supplierid: 1, companyname: 'Exotic Liquids', contactname: 'Charlotte Cooper'"}},
+        "solution": "SELECT supplierid, contactname, contacttitle FROM suppliers WHERE contacttitle <> 'Marketing Manager'"
     },
     {
-        "id":7, 
-        "question":"Products with queso in ProductName", 
-        "description": "Search for all products whose names contain the word 'queso'. This demonstrates the use of pattern matching (LIKE operator) for product discovery, which is useful for inventory management and marketing analysis.",
+        "id": 7,
+        "question": "Products with queso in ProductName",
+        "description": "Find products whose name contains 'queso' using LIKE.",
         "tables": ["products"],
-        "table_info": {
-            "products": {
-                "columns": ["productid (INT, PK)", "productname (VARCHAR)", "categoryid (INT, FK)", "unitprice (DECIMAL)"],
-                "sample": "productid: 11, productname: 'Queso Cabrales', categoryid: 4, unitprice: 21.00"
-            }
-        },
-        "solution":"SELECT productid, productname FROM products WHERE productname LIKE '%queso%'"
+        "table_info": {"products": {"columns": ["productid (INT, PK)", "productname (VARCHAR)", "categoryid (INT, FK)", "unitprice (DECIMAL)"], "sample": "productid: 11, productname: 'Queso Cabrales'"}},
+        "solution": "SELECT productid, productname FROM products WHERE productname LIKE '%queso%'"
     },
     {
-        "id":8, 
-        "question":"Orders shipping to France or Belgium", 
-        "description": "Find all orders that are being shipped to either France or Belgium. This query is useful for regional shipping analysis, logistics planning, and understanding demand in specific European markets.",
+        "id": 8,
+        "question": "Orders shipping to France or Belgium",
+        "description": "Orders being shipped to France or Belgium (filter by shipcountry).",
         "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "shipcountry (VARCHAR)", "shippeddate (DATE)"],
-                "sample": "orderid: 10248, customerid: 'VINET', shipcountry: 'France', shippeddate: '1996-07-10'"
-            }
-        },
-        "solution":"SELECT orderid, customerid, shipcountry FROM orders WHERE shipcountry = 'France' OR shipcountry = 'Belgium'"
+        "table_info": {"orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "shipcountry (VARCHAR)"], "sample": "orderid: 10248, shipcountry: 'France'"}},
+        "solution": "SELECT orderid, customerid, shipcountry FROM orders WHERE shipcountry IN ('France', 'Belgium')"
     },
     {
-        "id":9, 
-        "question":"Orders shipping to any country in Latin America", 
-        "description": "Filter orders to show only those shipped to countries in Latin America (Brazil, Mexico, Argentina, Venezuela). Demonstrates the use of the IN clause for grouping multiple conditions, which is useful for regional sales and logistics analysis.",
+        "id": 9,
+        "question": "Orders shipping to any country in Latin America",
+        "description": "Filter orders shipped to Brazil, Mexico, Argentina, or Venezuela.",
         "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "shipcountry (VARCHAR)"],
-                "sample": "orderid: 10259, customerid: 'CENTC', shipcountry: 'Brazil'"
-            }
-        },
-        "solution":"SELECT orderid, customerid, shipcountry FROM orders WHERE shipcountry IN ('Brazil', 'Mexico', 'Argentina', 'Venezuela')"
+        "table_info": {"orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "shipcountry (VARCHAR)"], "sample": "orderid: 10259, shipcountry: 'Brazil'"}},
+        "solution": "SELECT orderid, customerid, shipcountry FROM orders WHERE shipcountry IN ('Brazil','Mexico','Argentina','Venezuela')"
     },
     {
-        "id":10, 
-        "question":"Employees, in order of age", 
-        "description": "Sort all employees by their birthdate in ascending order. This query helps identify the age demographics and workforce composition, which is useful for HR planning and diversity analysis.",
+        "id": 10,
+        "question": "Employees, in order of age",
+        "description": "Sort employees by birthdate ascending to inspect age distribution.",
         "tables": ["employees"],
-        "table_info": {
-            "employees": {
-                "columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "title (VARCHAR)", "birthdate (DATE)"],
-                "sample": "employeeid: 9, firstname: 'Anne', lastname: 'Dodsworth', title: 'Sales Representative', birthdate: '1966-01-27'"
-            }
-        },
-        "solution":"SELECT firstname, lastname, title, birthdate FROM employees ORDER BY birthdate"
+        "table_info": {"employees": {"columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "birthdate (DATE)"], "sample": "employeeid: 9, firstname: 'Anne', lastname: 'Dodsworth'"}},
+        "solution": "SELECT firstname, lastname, birthdate FROM employees ORDER BY birthdate"
     },
+
     {
-        "id":11, 
-        "question":"Showing only the Date with a DateTime field", 
-        "description": "Extract only the date portion from the birthdate field (which may include time). Demonstrates data type casting and formatting for improved readability in reports and user interfaces.",
+        "id": 11,
+        "question": "Showing only the Date with a DateTime field",
+        "description": "Extract only the DATE portion from a DATETIME column using CAST or DATE().",
         "tables": ["employees"],
-        "table_info": {
-            "employees": {
-                "columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "birthdate (DATETIME)"],
-                "sample": "birthdate: '1966-01-27 00:00:00' ? cast to DATE: '1966-01-27'"
-            }
-        },
-        "solution":"SELECT firstname, lastname, title, CAST(birthdate AS DATE) FROM employees ORDER BY birthdate"
+        "table_info": {"employees": {"columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)", "birthdate (DATETIME)"], "sample": "birthdate: '1966-01-27 00:00:00' -> '1966-01-27'"}},
+        "solution": "SELECT firstname, lastname, CAST(birthdate AS DATE) FROM employees ORDER BY birthdate"
     },
     {
-        "id":12, 
-        "question":"Employees full name", 
-        "description": "Concatenate first and last names to create a full name field. Demonstrates string concatenation for formatted output.",
-            "description": "Concatenate the first and last names of employees to create a full name field. This demonstrates string concatenation in SQL, which is useful for creating formatted output for reports and user interfaces.",
+        "id": 12,
+        "question": "Employees full name",
+        "description": "Concatenate first and last names into a single field for display.",
         "tables": ["employees"],
-        "table_info": {
-            "employees": {
-                "columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)"],
-                "sample": "firstname: 'Nancy', lastname: 'Davolio' ? fullname: 'Nancy Davolio'"
-            }
-        },
-        "solution":"SELECT firstname, lastname, firstname + ' ' + lastname AS fullname FROM employees"
+        "table_info": {"employees": {"columns": ["employeeid (INT, PK)", "firstname (VARCHAR)", "lastname (VARCHAR)"], "sample": "Nancy Davolio"}},
+        "solution": "SELECT firstname, lastname, firstname + ' ' + lastname AS fullname FROM employees"
     },
     {
-        "id":13, 
-        "question":"OrderDetails amount per line item", 
-        "description": "Calculate the total price for each order line item by multiplying unit price and quantity. Shows mathematical operations in SQL.",
-            "description": "Calculate the total price for each order line item by multiplying the unit price by the quantity. This demonstrates mathematical operations in SQL and is useful for invoice generation and sales analysis.",
+        "id": 13,
+        "question": "OrderDetails amount per line item",
+        "description": "Compute total price per order line by multiplying unitprice and quantity.",
         "tables": ["orderdetails"],
-        "table_info": {
-            "orderdetails": {
-                "columns": ["orderid (INT, FK)", "productid (INT, FK)", "unitprice (DECIMAL)", "quantity (INT)", "discount (DECIMAL)"],
-                "sample": "orderid: 10248, unitprice: 10.00, quantity: 12 ? totalprice: 120.00"
-            }
-        },
-        "solution":"SELECT orderid, productid, unitprice, quantity, unitprice * quantity AS totalprice FROM orderdetails ORDER BY orderid, productid"
+        "table_info": {"orderdetails": {"columns": ["orderid (INT, FK)", "productid (INT, FK)", "unitprice (DECIMAL)", "quantity (INT)"], "sample": "orderid: 10248, unitprice: 10.00, quantity: 12"}},
+        "solution": "SELECT orderid, productid, unitprice, quantity, unitprice * quantity AS totalprice FROM orderdetails"
     },
     {
-        "id":14, 
-        "question":"How many customers?", 
-        "description": "Count the total number of unique customers in the database. A basic aggregation query to understand database size.",
-            "description": "Count the total number of unique customers in the database. This basic aggregation query helps users understand the size of the customer base, which is important for business growth analysis.",
+        "id": 14,
+        "question": "How many customers?",
+        "description": "Count unique customers in the database using COUNT().",
         "tables": ["customers"],
-        "table_info": {
-            "customers": {
-                "columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)", "contactname (VARCHAR)"],
-                "sample": "Total customers: 91"
-            }
-        },
-        "solution":"SELECT COUNT(customerid) AS totalcustomers FROM customers"
+        "table_info": {"customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)"], "sample": "Total customers: 91"}},
+        "solution": "SELECT COUNT(customerid) AS totalcustomers FROM customers"
     },
     {
-        "id":15, 
-        "question":"When was the first order?", 
-        "description": "Find the earliest order date in the system. Uses MIN() aggregate function for temporal analysis.",
-            "description": "Find the earliest order date in the system using the MIN() aggregate function. This is useful for understanding how long the business has been operating and for historical sales analysis.",
+        "id": 15,
+        "question": "When was the first order?",
+        "description": "Find the earliest order date using MIN(orderdate).",
         "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "orderdate (DATE)"],
-                "sample": "First order date: '1996-07-04'"
-            }
-        },
-        "solution":"SELECT MIN(orderdate) AS firstorder FROM orders"
+        "table_info": {"orders": {"columns": ["orderid (INT, PK)", "orderdate (DATE)"], "sample": "First order date: '1996-07-04'"}},
+        "solution": "SELECT MIN(orderdate) AS firstorder FROM orders"
     },
     {
-        "id":16, 
-        "question":"Countries where there are customers", 
-        "description": "Get unique list of all countries with customers. Uses DISTINCT to eliminate duplicates.",
-            "description": "Get a unique list of all countries where there are customers. Uses the DISTINCT keyword to eliminate duplicates, which is useful for market expansion and international sales analysis.",
+        "id": 16,
+        "question": "Countries where there are customers",
+        "description": "Return distinct list of countries that have customers.",
         "tables": ["customers"],
-        "table_info": {
-            "customers": {
-                "columns": ["customerid (VARCHAR, PK)", "country (VARCHAR)"],
-                "sample": "Countries: USA, UK, France, Germany, Canada, Brazil, etc."
-            }
-        },
-        "solution":"SELECT DISTINCT country FROM customers"
+        "table_info": {"customers": {"columns": ["customerid (VARCHAR, PK)", "country (VARCHAR)"], "sample": "USA, UK, France, Germany, Brazil"}},
+        "solution": "SELECT DISTINCT country FROM customers"
     },
     {
-        "id":17, 
-        "question":"Contact titles for customers", 
-        "description": "Count customers by contact title and rank them. Shows GROUP BY with aggregation and sorting.",
-            "description": "Count the number of customers for each contact title and rank them in descending order. This query uses GROUP BY with aggregation and sorting, which is useful for understanding customer roles and targeting communications.",
+        "id": 17,
+        "question": "Contact titles for customers",
+        "description": "Count customers grouped by contact title and sort by frequency.",
         "tables": ["customers"],
-        "table_info": {
-            "customers": {
-                "columns": ["customerid (VARCHAR, PK)", "contacttitle (VARCHAR)"],
-                "sample": "contacttitle: 'Sales Manager' (count: 25), 'Owner' (count: 19), etc."
-            }
-        },
-        "solution":"SELECT contacttitle, COUNT(contacttitle) AS total FROM customers GROUP BY contacttitle ORDER BY total DESC"
+        "table_info": {"customers": {"columns": ["customerid (VARCHAR, PK)", "contacttitle (VARCHAR)"], "sample": "Sales Manager, Owner, Purchasing Agent"}},
+        "solution": "SELECT contacttitle, COUNT(*) AS total FROM customers GROUP BY contacttitle ORDER BY total DESC"
     },
     {
-        "id":18, 
-        "question":"Products with associated supplier names", 
-        "description": "Link products to their suppliers using INNER JOIN. Shows how to combine data from related tables.",
-            "description": "Link each product to its supplier using an INNER JOIN. This query shows how to combine data from related tables and is useful for supply chain management and vendor analysis.",
-            "description": "Connect orders with shipping companies to see which carrier was used for each order. Demonstrates JOIN with date formatting. Only orders with orderid less than 10300 are included, which may represent a sample of early orders or a subset for demonstration purposes. This filter should be adjusted or removed for real business analysis.",
+        "id": 18,
+        "question": "Products with associated supplier names",
+        "description": "Join products to suppliers to show supplier names next to products.",
         "tables": ["products", "suppliers"],
-        "table_info": {
-            "products": {"columns": ["productid (INT, PK)", "productname (VARCHAR)", "supplierid (INT, FK)"]},
-            "suppliers": {"columns": ["supplierid (INT, PK)", "companyname (VARCHAR)"]},
-            "relationship": "products.supplierid ? suppliers.supplierid"
-        },
-        "solution":"SELECT productid, productname, companyname FROM products INNER JOIN suppliers ON products.supplierid = suppliers.supplierid ORDER BY productid"
+        "table_info": {"products": {"columns": ["productid (INT, PK)", "productname (VARCHAR)"]}, "suppliers": {"columns": ["supplierid (INT, PK)", "companyname (VARCHAR)"]}},
+        "solution": "SELECT p.productid, p.productname, s.companyname FROM products p INNER JOIN suppliers s ON p.supplierid = s.supplierid ORDER BY p.productid"
     },
     {
-        "id":19, 
-        "question":"Orders and the Shipper that was used", 
-        "description": "Connect orders with shipping companies to see which carrier was used for each order. Demonstrates JOIN with date formatting. Only orders with orderid less than 10300 are included to focus on a specific subset of the data, such as early orders or a sample for demonstration.",
+        "id": 19,
+        "question": "Orders and the Shipper that was used",
+        "description": "Show orders together with the shipper company used for shipment.",
         "tables": ["orders", "shippers"],
-        "table_info": {
-            "orders": {"columns": ["orderid (INT, PK)", "orderdate (DATE)", "shipvia (INT, FK)"]},
-            "shippers": {"columns": ["shipperid (INT, PK)", "companyname (VARCHAR)"]},
-            "relationship": "orders.shipvia ? shippers.shipperid"
-        },
-        "solution":"SELECT orderid, CAST(orderdate AS DATE) AS orderdate, companyname FROM orders INNER JOIN shippers ON orders.shipvia = shippers.shipperid WHERE orderid < 10300 ORDER BY orderid"
+        "table_info": {"orders": {"columns": ["orderid (INT, PK)", "shipvia (INT, FK)"]}, "shippers": {"columns": ["shipperid (INT, PK)", "companyname (VARCHAR)"]}},
+        "solution": "SELECT o.orderid, CAST(o.orderdate AS DATE), s.companyname FROM orders o INNER JOIN shippers s ON o.shipvia = s.shipperid WHERE o.orderid < 10300 ORDER BY o.orderid"
     },
     {
-        "id":20, 
-        "question":"Categories, and the total products in each category", 
-        "description": "Count products per category and rank by frequency. Uses JOIN with GROUP BY and aggregation.",
-            "description": "Count the number of products in each category and rank categories by the number of products. This query uses JOIN with GROUP BY and aggregation, which is useful for inventory analysis and category management.",
+        "id": 20,
+        "question": "Categories, and the total products in each category",
+        "description": "Count products per category and rank categories by product count.",
         "tables": ["products", "categories"],
-        "table_info": {
-            "products": {"columns": ["productid (INT, PK)", "categoryid (INT, FK)"]},
-            "categories": {"columns": ["categoryid (INT, PK)", "categoryname (VARCHAR)"]},
-            "relationship": "products.categoryid ? categories.categoryid"
-        },
-        "solution":"SELECT categoryname, COUNT(*) AS totalproducts FROM products INNER JOIN categories ON categories.categoryid = products.categoryid GROUP BY categoryname ORDER BY totalproducts DESC"
+        "table_info": {"products": {"columns": ["productid (INT, PK)", "categoryid (INT, FK)"]}, "categories": {"columns": ["categoryid (INT, PK)", "categoryname (VARCHAR)"]}},
+        "solution": "SELECT c.categoryname, COUNT(*) AS totalproducts FROM products p INNER JOIN categories c ON p.categoryid = c.categoryid GROUP BY c.categoryname ORDER BY totalproducts DESC"
     },
+
     {
-        "id":21, 
-        "question":"Total customers per country/city", 
-        "description": "Analyze customer distribution by geography. Uses GROUP BY with multiple columns and sorting.",
-            "description": "Analyze the distribution of customers by city and country. Uses GROUP BY with multiple columns and sorting, which is useful for geographic market analysis and sales planning.",
+        "id": 21,
+        "question": "Total customers per country/city",
+        "description": "Group and count customers by country and city.",
         "tables": ["customers"],
-        "table_info": {
-            "customers": {
-                "columns": ["customerid (VARCHAR, PK)", "city (VARCHAR)", "country (VARCHAR)"],
-                "sample": "city: 'London', country: 'UK' (count: 4), city: 'Berlin', country: 'Germany' (count: 2)"
-            }
-        },
-        "solution":"SELECT city, country, COUNT(*) AS total FROM customers GROUP BY country, city ORDER BY total DESC"
+        "table_info": {"customers": {"columns": ["customerid (VARCHAR, PK)", "city (VARCHAR)", "country (VARCHAR)"], "sample": "city: 'London', country: 'UK' (count: 4)"}},
+        "solution": "SELECT city, country, COUNT(*) AS total FROM customers GROUP BY country, city ORDER BY total DESC"
     },
     {
-        "id":22, 
-        "question":"Products that need reordering", 
-        "description": "Identify low stock products where units in stock fall below reorder level. Critical for inventory management.",
-            "description": "Identify products where the number of units in stock is less than the reorder level. This is critical for inventory management, as it helps prevent stockouts and ensures timely reordering.",
+        "id": 22,
+        "question": "Products that need reordering",
+        "description": "Identify products where units in stock are less than the reorder level.",
         "tables": ["products"],
-        "table_info": {
-            "products": {
-                "columns": ["productid (INT, PK)", "productname (VARCHAR)", "unitsinstock (INT)", "reorderlevel (INT)"],
-                "sample": "productid: 12, unitsinstock: 0, reorderlevel: 30 (needs reordering)"
-            }
-        },
-        "solution":"SELECT productid, productname, unitsinstock, reorderlevel FROM products WHERE unitsinstock < reorderlevel ORDER BY productid"
+        "table_info": {"products": {"columns": ["productid (INT, PK)", "productname (VARCHAR)", "unitsinstock (INT)", "reorderlevel (INT)"], "sample": "unitsinstock: 0, reorderlevel: 30"}},
+        "solution": "SELECT productid, productname, unitsinstock, reorderlevel FROM products WHERE unitsinstock < reorderlevel ORDER BY productid"
     },
     {
-        "id":23, 
-        "question":"Products that need reordering, continued", 
-        "description": "Advanced inventory check considering both stock and on-order quantities. Only shows active products (not discontinued).",
-            "description": "Advanced inventory check: identify products where the sum of units in stock and units on order is less than or equal to the reorder level, and the product is not discontinued. This helps ensure only active products are considered for reordering.",
+        "id": 23,
+        "question": "Products that need reordering, continued",
+        "description": "Consider on-order quantities and exclude discontinued products.",
         "tables": ["products"],
-        "table_info": {
-            "products": {
-                "columns": ["productid (INT, PK)", "productname (VARCHAR)", "unitsinstock (INT)", "unitsonorder (INT)", "reorderlevel (INT)", "discontinued (BIT)"],
-                "sample": "When (unitsinstock + unitsonorder) <= reorderlevel AND discontinued = 0"
-            }
-        },
-        "solution":"SELECT productid, productname, unitsinstock, unitsonorder, reorderlevel, discontinued FROM products WHERE unitsinstock + unitsonorder <= reorderlevel AND discontinued = 0 ORDER BY productid"
+        "table_info": {"products": {"columns": ["productid (INT, PK)", "productname (VARCHAR)", "unitsinstock (INT)", "unitsonorder (INT)", "reorderlevel (INT)", "discontinued (BIT)"], "sample": "unitsinstock + unitsonorder <= reorderlevel"}},
+        "solution": "SELECT productid, productname FROM products WHERE unitsinstock + unitsonorder <= reorderlevel AND discontinued = 0 ORDER BY productid"
     },
     {
-        "id":24, 
-        "question":"Customer list by region", 
-        "description": "Sort customers with region handling. Uses CASE statement to prioritize customers with null regions.",
-            "description": "Sort customers by region, placing those with a region value first and those with NULL regions last. Uses a CASE statement to prioritize, which is useful for regional sales management and reporting.",
+        "id": 24,
+        "question": "Customer list by region",
+        "description": "Sort customers by region, placing NULL regions last.",
         "tables": ["customers"],
-        "table_info": {
-            "customers": {
-                "columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)", "region (VARCHAR)"],
-                "sample": "Customers with regions first, then those without (NULL values last)"
-            }
-        },
-        "solution":"SELECT customerid, companyname, region FROM customers ORDER BY (CASE WHEN region IS NULL THEN 1 ELSE 0 END), region, customerid"
+        "table_info": {"customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)", "region (VARCHAR)"], "sample": "region: NULL or region name"}},
+        "solution": "SELECT customerid, companyname, region FROM customers ORDER BY (CASE WHEN region IS NULL THEN 1 ELSE 0 END), region, customerid"
     },
     {
-        "id":25, 
-        "question":"High freight charges", 
-        "description": "Find top 3 countries with highest average shipping costs. Shows use of TOP clause and GROUP BY.",
-            "description": "Find the top 3 countries with the highest average shipping (freight) costs. Uses the TOP clause and GROUP BY, which is useful for identifying expensive shipping destinations and optimizing logistics.",
+        "id": 25,
+        "question": "High freight charges",
+        "description": "Top 3 countries by average freight cost.",
         "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "shipcountry (VARCHAR)", "freight (DECIMAL)"],
-                "sample": "shipcountry: 'Sweden', averagefreight: 205.38"
-            }
-        },
-        "solution":"SELECT TOP 3 shipcountry, AVG(freight) AS averagefreight FROM orders GROUP BY shipcountry ORDER BY averagefreight DESC"
-    },
-    {
-        "id":26, 
-        "question":"High freight charges - 2015", 
-        "description": "Analyze shipping costs filtered by year. Demonstrates date filtering for temporal analysis.",
-            "description": "Analyze shipping (freight) costs for orders placed in the year 2015. Demonstrates date filtering for temporal analysis, which is useful for year-over-year cost comparisons.",
-        "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "shipcountry (VARCHAR)", "freight (DECIMAL)", "orderdate (DATE)"],
-                "sample": "Data filtered for orders between 2015-01-01 and 2016-01-01"
-            }
-        },
-        "solution":"SELECT TOP 3 shipcountry, AVG(freight) AS averagefreight FROM orders WHERE orderdate >= '20150101' AND orderdate < '20160101' GROUP BY shipcountry ORDER BY averagefreight DESC"
-    },
-    {
-        "id":27, 
-        "question":"High freight charges with between", 
-        "description": "Alternative approach using different date format. Shows flexibility in SQL date comparisons.",
-            "description": "Alternative approach to analyzing shipping costs for a specific year, using a different date format or method. Shows flexibility in SQL date comparisons for temporal analysis.",
-        "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "shipcountry (VARCHAR)", "freight (DECIMAL)", "orderdate (DATE)"],
-                "sample": "Top 3 countries by average freight in a specific year"
-            }
-        },
-        "solution":"SELECT TOP 3 shipcountry, AVG(freight) AS averagefreight FROM orders WHERE orderdate >= '20150101' AND orderdate < '20160101' GROUP BY shipcountry ORDER BY averagefreight DESC"
-    },
-    {
-        "id":28, 
-        "question":"High freight charges - last year", 
-        "description": "Dynamic date filtering using DATEADD function. Calculates based on most recent order date.",
-            "description": "Analyze shipping costs for the last year relative to the most recent order date in the system. Uses the DATEADD function for dynamic date filtering, which is useful for rolling year analysis.",
-        "tables": ["orders"],
-        "table_info": {
-            "orders": {
-                "columns": ["orderid (INT, PK)", "shipcountry (VARCHAR)", "freight (DECIMAL)", "orderdate (DATE)"],
-                "sample": "Data from the last year relative to the latest order in the system"
-            }
-        },
-        "solution":"SELECT TOP 3 shipcountry, AVG(freight) AS averagefreight FROM orders WHERE orderdate >= DATEADD(year, -1, (SELECT MAX(orderdate) FROM orders)) GROUP BY shipcountry ORDER BY averagefreight DESC"
-    },
-    {
-        "id":29, 
-        "question":"Inventory list", 
-        "description": "Create comprehensive inventory snapshot with employee and product information. Complex multi-table JOIN.",
-            "description": "Create a comprehensive inventory snapshot by joining orders, employees, order details, and products. This complex multi-table JOIN provides detailed information for inventory tracking and employee performance analysis.",
-        "tables": ["orders", "employees", "orderdetails", "products"],
-        "table_info": {
-            "orders": {"columns": ["orderid (INT, PK)", "employeeid (INT, FK)"]},
-            "employees": {"columns": ["employeeid (INT, PK)", "lastname (VARCHAR)"]},
-            "orderdetails": {"columns": ["orderid (INT, FK)", "productid (INT, FK)", "quantity (INT)"]},
-            "products": {"columns": ["productid (INT, PK)", "productname (VARCHAR)"]},
-            "relationship": "Multiple JOINs connecting all tables"
-        },
-        "solution":"SELECT orders.employeeid, employees.lastname, orders.orderid, products.productname, orderdetails.quantity FROM orders INNER JOIN employees ON orders.employeeid = employees.employeeid INNER JOIN orderdetails ON orders.orderid = orderdetails.orderid INNER JOIN products ON products.productid = orderdetails.productid ORDER BY orderid, products.productid"
-    },
-    {
-        "id":30, 
-        "question":"Customers with no orders", 
-        "description": "Find inactive customers who have never placed orders. Uses LEFT JOIN to identify missing matches.",
-            "description": "Find customers who have never placed an order by using a LEFT JOIN to identify missing matches. This is useful for identifying inactive customers and targeting them for marketing or outreach.",
-        "tables": ["customers", "orders"],
-        "table_info": {
-            "customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)"]},
-            "orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)"]},
-            "relationship": "customers.customerid ? orders.customerid (LEFT JOIN)"
-        },
-        "solution":"SELECT customers.customerid, orders.customerid FROM customers LEFT JOIN orders ON orders.customerid = customers.customerid WHERE orders.customerid IS NULL"
-    },
-    {
-        "id":31, 
-        "question":"Customers with no orders for EmployeeID 4", 
-        "description": "Find customers who haven't bought from a specific salesman. Shows conditional LEFT JOIN logic.",
-            "description": "Find customers who have not placed any orders with the employee whose EmployeeID is 4. Uses conditional LEFT JOIN logic, which is useful for analyzing sales coverage and identifying new business opportunities.",
-        "tables": ["customers", "orders"],
-        "table_info": {
-            "customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)"]},
-            "orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "employeeid (INT)"]},
-            "relationship": "customers.customerid ? orders.customerid WHERE employeeid = 4"
-        },
-        "solution":"SELECT customers.customerid, orders.customerid FROM customers LEFT JOIN orders ON orders.customerid = customers.customerid AND orders.employeeid = '4' WHERE orders.customerid IS NULL"
-    },
-    {
-        "id":32, 
-        "question":"High-value customers", 
-        "description": "Identify individual high-value orders in 2016. Uses aggregation with HAVING clause and multiple table joins.",
-            "description": "Identify individual orders in 2016 where the total order amount exceeds 10,000. Uses aggregation with HAVING clause and multiple table joins, which is useful for high-value sales analysis and customer segmentation.",
-        "tables": ["customers", "orders", "orderdetails"],
-        "table_info": {
-            "customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)"]},
-            "orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "orderdate (DATE)"]},
-            "orderdetails": {"columns": ["orderid (INT, FK)", "quantity (INT)", "unitprice (DECIMAL)"]},
-            "relationship": "Multiple JOINs with aggregation"
-        },
-        "solution":"SELECT c.customerid, c.companyname, o.orderid, SUM(od.quantity * od.unitprice) AS totalorderamount FROM customers AS c INNER JOIN orders AS o ON o.customerid = c.customerid INNER JOIN orderdetails AS od ON od.orderid = o.orderid WHERE YEAR(o.orderdate) = 2016 GROUP BY c.customerid, c.companyname, o.orderid HAVING SUM(od.quantity * od.unitprice) > '10000' ORDER BY totalorderamount DESC"
-    },
-    {
-        "id":33, 
-        "question":"High-value customers - total orders", 
-        "description": "Aggregate high-value customers' total spending in 2016. Shows how to sum across multiple orders.",
-            "description": "Aggregate the total spending of high-value customers in 2016 by summing across all their orders. Shows how to use GROUP BY and HAVING to identify top customers for loyalty programs or targeted marketing.",
-        "tables": ["customers", "orders", "orderdetails"],
-        "table_info": {
-            "customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)"]},
-            "orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "orderdate (DATE)"]},
-            "orderdetails": {"columns": ["orderid (INT, FK)", "quantity (INT)", "unitprice (DECIMAL)"]},
-            "relationship": "Group all orders per customer and sum totals"
-        },
-        "solution":"SELECT c.customerid, c.companyname, SUM(od.quantity * od.unitprice) AS totalorderamount FROM customers AS c INNER JOIN orders AS o ON o.customerid = c.customerid INNER JOIN orderdetails AS od ON od.orderid = o.orderid WHERE YEAR(o.orderdate) = 2016 GROUP BY c.customerid, c.companyname HAVING SUM(od.quantity * od.unitprice) >= '15000' ORDER BY totalorderamount DESC"
-    },
-    {
-        "id":34, 
-        "question":"High-value customers - with discount", 
-        "description": "Calculate actual revenue after applying discounts. Shows business logic with discount calculations.",
-            "description": "Calculate the actual revenue from each customer in 2016 after applying discounts. Shows business logic with discount calculations, which is important for accurate revenue reporting and profitability analysis.",
-        "tables": ["customers", "orders", "orderdetails"],
-        "table_info": {
-            "customers": {"columns": ["customerid (VARCHAR, PK)", "companyname (VARCHAR)"]},
-            "orders": {"columns": ["orderid (INT, PK)", "customerid (VARCHAR, FK)", "orderdate (DATE)"]},
-            "orderdetails": {"columns": ["orderid (INT, FK)", "quantity (INT)", "unitprice (DECIMAL)", "discount (DECIMAL)"]},
-            "relationship": "Calculate: total = SUM(quantity * unitprice * (1 - discount))"
-        },
-        "solution":"SELECT c.customerid, c.companyname, SUM(od.quantity * od.unitprice) AS totalswithoutdiscount, SUM(od.quantity * od.unitprice * (1 - discount)) AS totalswithdiscount FROM customers AS c JOIN orders AS o ON o.customerid = c.customerid JOIN orderdetails AS od ON o.orderid = od.orderid WHERE orderdate >= '20160101' AND orderdate < '20170101' GROUP BY c.customerid, c.companyname HAVING SUM(od.quantity * od.unitprice * (1 - discount)) > 10000 ORDER BY totalswithdiscount DESC"
+        "table_info": {"orders": {"columns": ["orderid (INT, PK)", "shipcountry (VARCHAR)", "freight (DECIMAL)"]}},
+        "solution": "SELECT TOP 3 shipcountry, AVG(freight) AS averagefreight FROM orders GROUP BY shipcountry ORDER BY averagefreight DESC"
     },
     {"id": 201, "type": "mcq", "question": "What will COUNT(column_name) return if the column contains NULL values?", "options": ["A) Total rows including NULLs", "B) Total rows excluding NULLs", "C) Only NULL rows", "D) Error"], "correct_answers": ["B"], "complexity": "easy", "topic": "SQL"},
     {"id": 202, "type": "mcq", "question": "What is the result of the following query? SELECT COUNT(*) FROM employees WHERE salary > 5000;", "options": ["A) Number of non-NULL salaries", "B) Number of rows where salary is not NULL", "C) Number of rows where salary > 5000", "D) Total number of rows"], "correct_answers": ["C"], "complexity": "easy", "topic": "SQL"},
